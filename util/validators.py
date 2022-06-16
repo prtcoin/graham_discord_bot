@@ -1,11 +1,11 @@
-import re
+from hashlib import blake2b
 
 from bitstring import BitArray
-from hashlib import blake2b
 
 from util.env import Env
 
-class Validators():
+
+class Validators:
     @staticmethod
     def too_many_decimals(in_num: float) -> bool:
         """Return True if input number has two many digits of precision"""
@@ -23,10 +23,10 @@ class Validators():
             return False
         return cls.validate_checksum_xrb(input_text)
 
-    @staticmethod
-    def validate_checksum_xrb(address: str) -> bool:
-        """Given an xrb/nano/ban address validate the checksum"""
-        if (address[:5] == 'nano_' and len(address) == 65) or (address[:4] in ['ban_', 'xrb_']  and len(address) == 64):
+    @classmethod
+    def validate_checksum_xrb(cls, address: str) -> bool:
+        """Given a xrb/nano/ban address validate the checksum. Return true if valid, false otherwise"""
+        if len(address) == 65 and address[:5] == 'prtc_':
             # Populate 32-char account index
             account_map = "13456789abcdefghijkmnopqrstuwxyz"
             account_lookup = {}
@@ -34,11 +34,12 @@ class Validators():
                 account_lookup[account_map[i]] = BitArray(uint=i, length=5)
 
             # Extract key from address (everything after prefix)
-            acrop_key = address[4:-8] if address[:5] != 'nano_' else address[5:-8]
+            acrop_key = address[5:-8]
             # Extract checksum from address
             acrop_check = address[-8:]
 
-            # Convert base-32 (5-bit) values to byte string by appending each 5-bit value to the bitstring, essentially bitshifting << 5 and then adding the 5-bit value.
+            # Convert base-32 (5-bit) values to byte string by appending each 5-bit value to the bitstring, essentially
+            # bitshifting << 5 and then adding the 5-bit value.
             number_l = BitArray()
             for x in range(0, len(acrop_key)):
                 number_l.append(account_lookup[acrop_key[x]])
@@ -46,6 +47,8 @@ class Validators():
 
             check_l = BitArray()
             for x in range(0, len(acrop_check)):
+                if acrop_check[x] not in account_lookup:
+                    return False
                 check_l.append(account_lookup[acrop_check[x]])
             check_l.byteswap()  # reverse byte order to match hashing format
 
@@ -53,4 +56,5 @@ class Validators():
             h = blake2b(digest_size=5)
             h.update(number_l.bytes)
             return h.hexdigest() == check_l.hex
+
         return False
