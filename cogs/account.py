@@ -154,7 +154,7 @@ class AccountCog(commands.Cog):
                                pending_receive_db: int) -> discord.Embed:
         embed = discord.Embed(colour=0xFBDD11 if Env.banano() else discord.Colour.dark_blue())
         embed.set_author(name="Balance",
-                         icon_url="https://github.com/bbedward/graham_discord_bot/raw/master/assets/banano_logo.png" if Env.banano() else "https://github.com/bbedward/graham_discord_bot/raw/master/assets/nano_logo.png")
+                         icon_url="https://partycoincc-files.s3.amazonaws.com/images/partycoin_logo_50.original.png" if Env.banano() else "https://github.com/bbedward/graham_discord_bot/raw/master/assets/nano_logo.png")
         embed.description = "**Available:**\n"
         embed.description += f"```{Env.raw_to_amount(balance_raw - pending_send_db):,} {Env.currency_symbol()}\n"
         pending_receive_str = f"+ {Env.raw_to_amount(pending_raw + pending_receive_db):,} {Env.currency_symbol()}"
