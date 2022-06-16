@@ -6,7 +6,7 @@ from util.number import NumberUtil
 class Env():
     @staticmethod
     def banano() -> bool:
-        return True if os.getenv('BANANO', None) is not None else False
+        return True
 
     @staticmethod
     def raw_to_amount(raw_amt: int, truncate: bool = True) -> float:

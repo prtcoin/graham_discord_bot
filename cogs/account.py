@@ -10,7 +10,8 @@ from db.redis import RedisDB
 from rpc.client import RPCClient
 from tasks.transaction_queue import TransactionQueue
 from util.env import Env
-from util.regex import RegexUtil, AmountMissingException, AmountAmbiguousException, AddressAmbiguousException, AddressMissingException
+from util.regex import RegexUtil, AmountMissingException, AmountAmbiguousException, AddressAmbiguousException, \
+    AddressMissingException
 from util.validators import Validators
 from util.discord.channel import ChannelUtil
 from util.discord.messages import Messages
@@ -21,31 +22,32 @@ import logging
 
 ## Command(s) documentation
 REGISTER_INFO = CommandInfo(
-    triggers = ["deposit", "register", "wallet", "address"],
-    overview = "Shows your account address",
-    details = "Displays your tip bot account address along with a QR code. QR code is encoded with an amount if provided" +
-                f"\n- Send {Env.currency_name()} to this address to increase your tip bot balance" +
-                "\n- If you do not have a tip bot account yet, this command will create one for you (receiving a tip automatically creates an account too)"
+    triggers=["deposit", "register", "wallet", "address"],
+    overview="Shows your account address",
+    details="Displays your tip bot account address along with a QR code. QR code is encoded with an amount if provided" +
+            f"\n- Send {Env.currency_name()} to this address to increase your tip bot balance" +
+            "\n- If you do not have a tip bot account yet, this command will create one for you (receiving a tip automatically creates an account too)"
 )
 BALANCE_INFO = CommandInfo(
-    triggers = ["balance", "bal", "$"],
-    overview = "Shows your account balance",
-    details = f"Displays the balance of your bot account (in {Env.currency_symbol()})." +
-                f"\n - Available Balance represents the amount of {Env.currency_symbol()} that you have available to tip or withdraw." +
-                f"\n - Pending Balance represents the amount of {Env.currency_symbol()} that has been sent or received, but not processed by the bot yet."
+    triggers=["balance", "bal", "$"],
+    overview="Shows your account balance",
+    details=f"Displays the balance of your bot account (in {Env.currency_symbol()})." +
+            f"\n - Available Balance represents the amount of {Env.currency_symbol()} that you have available to tip or withdraw." +
+            f"\n - Pending Balance represents the amount of {Env.currency_symbol()} that has been sent or received, but not processed by the bot yet."
 )
 SEND_INFO = CommandInfo(
-    triggers = ["send", "withdraw"],
-    overview = f"Send {Env.currency_name()} to an external address.",
-    details = f"Send specified amount to specified address." +
-                f"\nExample `{config.Config.instance().command_prefix}send 10 {Env.currency_symbol().lower()}_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj` - Sends 10 {Env.currency_symbol()}"
+    triggers=["send", "withdraw"],
+    overview=f"Send {Env.currency_name()} to an external address.",
+    details=f"Send specified amount to specified address." +
+            f"\nExample `{config.Config.instance().command_prefix}send 10 {Env.currency_symbol().lower()}_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj` - Sends 10 {Env.currency_symbol()}"
 )
 SENDMAX_INFO = CommandInfo(
-    triggers = ["sendmax", "withdrawmax"],
-    overview = f"Send all of your {Env.currency_name()} to an external address.",
-    details = f"Send entire balance to specified address." +
-                f"\nExample `{config.Config.instance().command_prefix}sendmax {Env.currency_symbol().lower()}_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj` - Sends entire {Env.currency_symbol()} balance"
+    triggers=["sendmax", "withdrawmax"],
+    overview=f"Send all of your {Env.currency_name()} to an external address.",
+    details=f"Send entire balance to specified address." +
+            f"\nExample `{config.Config.instance().command_prefix}sendmax {Env.currency_symbol().lower()}_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj` - Sends entire {Env.currency_symbol()} balance"
 )
+
 
 class AccountCog(commands.Cog):
     def __init__(self, bot: Bot):
@@ -58,13 +60,15 @@ class AccountCog(commands.Cog):
         # Check paused
         if await RedisDB.instance().is_paused():
             ctx.error = True
-            await Messages.send_error_dm(msg.author, f"Transaction activity is currently suspended. I'll be back online soon!")
+            await Messages.send_error_dm(msg.author,
+                                         f"Transaction activity is currently suspended. I'll be back online soon!")
             return
         if ctx.command.name == 'send_cmd':
             try:
                 ctx.send_amount = RegexUtil.find_send_amounts(msg.content)
                 if Validators.too_many_decimals(ctx.send_amount):
-                    await Messages.send_error_dm(msg.author, f"You are only allowed to use {Env.precision_digits()} digits after the decimal.")
+                    await Messages.send_error_dm(msg.author,
+                                                 f"You are only allowed to use {Env.precision_digits()} digits after the decimal.")
                     ctx.error = True
                     return
             except AmountMissingException:
@@ -79,12 +83,14 @@ class AccountCog(commands.Cog):
             # See if user exists in DB
             user = await User.get_user(msg.author)
             if user is None:
-                await Messages.send_error_dm(msg.author, f"You should create an account with me first, send me `{config.Config.instance().command_prefix}help` to get started.")
+                await Messages.send_error_dm(msg.author,
+                                             f"You should create an account with me first, send me `{config.Config.instance().command_prefix}help` to get started.")
                 ctx.error = True
                 return
             elif user.frozen:
                 ctx.error = True
-                await Messages.send_error_dm(msg.author, f"Your account is frozen. Contact an admin if you need further assistance.")
+                await Messages.send_error_dm(msg.author,
+                                             f"Your account is frozen. Contact an admin if you need further assistance.")
                 return
             # Update name, if applicable
             await user.update_name(msg.author.name)
@@ -92,7 +98,8 @@ class AccountCog(commands.Cog):
             # See if they are spammin'
             withdraw_delay = await user.get_next_withdraw_s()
             if withdraw_delay > 0:
-                await Messages.send_error_dm(msg.author, f"You need to wait {withdraw_delay}s before you can withdraw again")
+                await Messages.send_error_dm(msg.author,
+                                             f"You need to wait {withdraw_delay}s before you can withdraw again")
                 ctx.error = True
                 return
             try:
@@ -126,7 +133,8 @@ class AccountCog(commands.Cog):
             user_address = await user.get_address()
         except Exception:
             self.logger.exception('Exception creating user')
-            await Messages.send_error_dm(msg.author, "I failed at retrieving your address, try again later and contact my master if the issue persists.")
+            await Messages.send_error_dm(msg.author,
+                                         "I failed at retrieving your address, try again later and contact my master if the issue persists.")
             return
         # Build URI
         uri_scheme = "ban:" if Env.banano() else "nano:"
@@ -136,14 +144,17 @@ class AccountCog(commands.Cog):
             uri = "{0}{1}?amount={2}".format(uri_scheme, user_address, Env.amount_to_raw(amount))
         # Build and send response
         embed = discord.Embed(colour=0xFBDD11 if Env.banano() else discord.Colour.dark_blue())
-        embed.set_author(name=user_address, icon_url="https://github.com/bbedward/graham_discord_bot/raw/master/assets/banano_logo.png" if Env.banano() else "https://github.com/bbedward/graham_discord_bot/raw/master/assets/nano_logo.png")
+        embed.set_author(name=user_address,
+                         icon_url="https://github.com/bbedward/graham_discord_bot/raw/master/assets/banano_logo.png" if Env.banano() else "https://github.com/bbedward/graham_discord_bot/raw/master/assets/nano_logo.png")
         embed.set_image(url=f"https://chart.googleapis.com/chart?cht=qr&chl={uri}&chs=180x180&choe=UTF-8&chld=L|2")
         await msg.author.send(embed=embed)
         await msg.author.send(user_address)
 
-    def format_balance_message(self, balance_raw: int, pending_raw: int, pending_send_db: int, pending_receive_db: int) -> discord.Embed:
+    def format_balance_message(self, balance_raw: int, pending_raw: int, pending_send_db: int,
+                               pending_receive_db: int) -> discord.Embed:
         embed = discord.Embed(colour=0xFBDD11 if Env.banano() else discord.Colour.dark_blue())
-        embed.set_author(name="Balance", icon_url="https://github.com/bbedward/graham_discord_bot/raw/master/assets/banano_logo.png" if Env.banano() else "https://github.com/bbedward/graham_discord_bot/raw/master/assets/nano_logo.png")
+        embed.set_author(name="Balance",
+                         icon_url="https://github.com/bbedward/graham_discord_bot/raw/master/assets/banano_logo.png" if Env.banano() else "https://github.com/bbedward/graham_discord_bot/raw/master/assets/nano_logo.png")
         embed.description = "**Available:**\n"
         embed.description += f"```{Env.raw_to_amount(balance_raw - pending_send_db):,} {Env.currency_symbol()}\n"
         pending_receive_str = f"+ {Env.raw_to_amount(pending_raw + pending_receive_db):,} {Env.currency_symbol()}"
@@ -151,7 +162,7 @@ class AccountCog(commands.Cog):
         rjust_size = max(len(pending_send_str), len(pending_receive_str))
         embed.description += f"{pending_receive_str.ljust(rjust_size)} (Pending Receipt)\n{pending_send_str.ljust(rjust_size)} (Pending Send)```\n"
         embed.set_footer(text="Pending balances are in queue and will become available after processing.")
-        return embed          
+        return embed
 
     @commands.command(aliases=BALANCE_INFO.triggers)
     async def balance_cmd(self, ctx: Context):
@@ -162,7 +173,8 @@ class AccountCog(commands.Cog):
         try:
             user = await User.get_user(msg.author)
             if user is None:
-                await Messages.send_error_dm(msg.author, f"It looks like you haven't created an account yet, you should use `{config.Config.instance().command_prefix}register` to create one.")
+                await Messages.send_error_dm(msg.author,
+                                             f"It looks like you haven't created an account yet, you should use `{config.Config.instance().command_prefix}register` to create one.")
                 return
             # Get "actual" balance
             address = await user.get_address()
@@ -231,7 +243,8 @@ class AccountCog(commands.Cog):
         available_balance = Env.raw_to_amount(await user.get_available_balance())
         if send_amount > available_balance:
             await Messages.add_x_reaction(msg)
-            await Messages.send_error_dm(msg.author, f"Your balance isn't high enough to complete this transaction. You have **{available_balance} {Env.currency_symbol()}**, but this would cost you **{send_amount} {Env.currency_symbol()}**")
+            await Messages.send_error_dm(msg.author,
+                                         f"Your balance isn't high enough to complete this transaction. You have **{available_balance} {Env.currency_symbol()}**, but this would cost you **{send_amount} {Env.currency_symbol()}**")
             return
 
         # Create transaction
@@ -243,7 +256,8 @@ class AccountCog(commands.Cog):
         # Queue the actual send
         await TransactionQueue.instance().put(tx)
         # Send user message
-        await Messages.send_success_dm(msg.author, "I've queued your transaction! I'll let you know once I broadcast it to the network.")
+        await Messages.send_success_dm(msg.author,
+                                       "I've queued your transaction! I'll let you know once I broadcast it to the network.")
 
     @commands.command(aliases=SENDMAX_INFO.triggers)
     async def sendmax_cmd(self, ctx: Context):
@@ -264,4 +278,5 @@ class AccountCog(commands.Cog):
         # Queue the actual send
         await TransactionQueue.instance().put(tx)
         # Send user message
-        await Messages.send_success_dm(msg.author, "I've queued your transaction! I'll let you know once I broadcast it to the network.")
+        await Messages.send_success_dm(msg.author,
+                                       "I've queued your transaction! I'll let you know once I broadcast it to the network.")
