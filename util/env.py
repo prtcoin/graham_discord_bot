@@ -19,11 +19,11 @@ class Env():
 
     @staticmethod
     def currency_name() -> str:
-        return 'BANANO' if Env.banano() else 'Nano'
+        return 'PARTYcoin' if Env.banano() else 'Nano'
 
     @staticmethod
     def currency_symbol() -> str:
-        return 'BAN' if Env.banano() else 'NANO'
+        return 'PRTC' if Env.banano() else 'NANO'
 
     @staticmethod
     def precision_digits() -> int:
@@ -31,4 +31,4 @@ class Env():
 
     @staticmethod
     def donation_address() -> str:
-        return 'ban_1bboss18y784j9rbwgt95uwqamjpsi9oips5syohsjk37rn5ud7ndbjq61ft' if Env.banano() else 'nano_1bboss18y784j9rbwgt95uwqamjpsi9oips5syohsjk37rn5ud7ndbjq61ft'
+        return 'prtc_3p97if96icoskyk4zt3dddkczuq5j4s8mr1r51je3dzzzyu59s6fs5z34hfx' if Env.banano() else 'nano_1bboss18y784j9rbwgt95uwqamjpsi9oips5syohsjk37rn5ud7ndbjq61ft'

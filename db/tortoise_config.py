@@ -2,6 +2,9 @@ import logging
 import os
 from tortoise import Tortoise
 
+import config
+
+
 class DBConfig(object):
     def __init__(self):
         self.logger = logging.getLogger()
